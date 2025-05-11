@@ -249,12 +249,12 @@ INSERT INTO localitati VALUES
 (2, 'Florența', 'Toscana', 2),
 (3, 'Paris', 'Île-de-France', 3),
 (4, 'Frankfurt', 'Hessa', 4),
-(5, 'Almeria', 'Andaluzia', 5),
+(5, 'Iași', 'Moldova', 1),
 (6, 'Atena', 'Attica', 6),
-(7, 'Texas', 'Texas', 7),
+(7, 'Iași', 'Moldova', 1),
 (8, 'Tokyo', 'Kantō', 8),
 (9, 'Ottawa', 'Ontario', 9),
-(10, 'Canberra', 'Australian Capital Territory', 10);
+(10, 'Iași', 'Moldova', 1);
 
 INSERT INTO persoane VALUES
 (1, 'Popescu', 'Ion Mihai', 'Română', 1, 'ion.popescu@email.com'),
@@ -365,27 +365,27 @@ INSERT INTO sejururi VALUES
 (10, 10, 10, '2025-10-27', '2025-10-20', 4, 2200);
 
 INSERT INTO rezervari VALUES
-(1, '2025-05-01 09:00:00', 1, 1, 1300.00, 100.00),
+(1, '2025-05-01 09:00:00', 1, 1, 1300.00, 0),
 (2, '2025-05-02 10:00:00', 2, 2, 1500.00, 100.00),
 (3, '2025-05-03 11:00:00', 3, 3, 1800.00, 120.00),
-(4, '2025-05-04 12:00:00', 4, 4, 2000.00, 150.00),
+(4, '2025-05-04 12:00:00', 4, 4, 2000.00, 0),
 (5, '2025-05-05 13:00:00', 5, 5, 2200.00, 200.00),
-(6, '2025-05-06 14:00:00', 6, 6, 2500.00, 100.00),
+(6, '2025-05-06 14:00:00', 6, 6, 2500.00, 0),
 (7, '2025-05-07 15:00:00', 7, 7, 1600.00, 50.00),
 (8, '2025-05-08 16:00:00', 8, 8, 1900.00, 80.00),
 (9, '2025-05-09 17:00:00', 9, 9, 2100.00, 90.00),
 (10, '2025-05-10 18:00:00', 10, 10, 2300.00, 110.00);
 
 INSERT INTO incasari VALUES
-(1, '2025-05-11 10:00:00', 'Factura', 100001, 1300.00),
-(2, '2025-05-12 10:00:00', 'Factura', 100002, 1500.00),
+(1, '2020-05-11 10:00:00', 'Factura', 100001, 1300.00),
+(2, '2020-05-12 10:00:00', 'Factura', 100002, 1500.00),
 (3, '2025-05-13 10:00:00', 'Chitanta', 100003, 1800.00),
-(4, '2025-05-14 10:00:00', 'Factura', 100004, 2000.00),
-(5, '2025-05-15 10:00:00', 'Chitanta', 100005, 2200.00),
-(6, '2025-05-16 10:00:00', 'Factura', 100006, 2500.00),
+(4, '2021-05-14 10:00:00', 'Factura', 100004, 2000.00),
+(5, '2022-05-15 10:00:00', 'Chitanta', 100005, 2200.00),
+(6, '2021-05-16 10:00:00', 'Factura', 100006, 2500.00),
 (7, '2025-05-17 10:00:00', 'Chitanta', 100007, 1600.00),
-(8, '2025-05-18 10:00:00', 'Factura', 100008, 1900.00),
-(9, '2025-05-19 10:00:00', 'Factura', 100009, 2100.00),
+(8, '2020-05-18 10:00:00', 'Factura', 100008, 1900.00),
+(9, '2022-05-19 10:00:00', 'Factura', 100009, 2100.00),
 (10, '2025-05-20 10:00:00', 'Factura', 100010, 2300.00);
 
 INSERT INTO rezervari_sejururi VALUES
@@ -530,3 +530,157 @@ WHERE l.numelocalitate = 'Florența' AND t.numetara = 'Italia';
 SELECT a.*
 FROM angajati a
 JOIN persoane p ON a.idpersoana = p.idpersoana;
+
+
+--1.5 Cate persoane au doua sau mai multe prenume
+SELECT COUNT(prenumepersoana) AS numar_persoane_cu_2_sau_mai_multe_prenume
+FROM persoane p
+WHERE prenumepersoana LIKE '% %';
+
+SELECT prenumepersoana         --functia asta este doar pentru verificare, sa vedem daca primim un nr corect pt functia de mai sus
+FROM persoane 
+WHERE prenumepersoana LIKE '% %';
+
+
+--1.6 Afisati numarul de obiective turistice din fiecare tara
+SELECT t.numetara,COUNT(ot.idobiectiv) AS numar_obiective
+FROM obiective_turistice ot
+INNER JOIN localitati l ON ot.idlocalitate = l.idlocalitate
+INNER JOIN tari t ON t.idtara = l.idtara
+GROUP BY t.numetara;
+
+
+--1.7 Pentru fiecare client din localitatea Iasi, Romania, afisati, pe coloane separate, incasarile pentru anii 2020,2021 si 2022
+SELECT p.numepersoana, p.prenumepersoana,
+    SUM(CASE WHEN EXTRACT(YEAR FROM i.dataoraincasare) = 2020 THEN i.sumaincasata ELSE 0 END) AS incasari_2020,
+    SUM(CASE WHEN EXTRACT(YEAR FROM i.dataoraincasare) = 2021 THEN i.sumaincasata ELSE 0 END) AS incasari_2021,
+    SUM(CASE WHEN EXTRACT(YEAR FROM i.dataoraincasare) = 2022 THEN i.sumaincasata ELSE 0 END) AS incasari_2022
+FROM persoane p
+JOIN localitati l ON p.idlocalitatepersoana = l.idlocalitate
+JOIN tari t ON l.idtara = t.idtara
+JOIN rezervari r ON p.idpersoana = r.codclient
+JOIN incasari_rezervari ir ON r.idrezervare = ir.idrezervare
+JOIN incasari i ON ir.idincasare = i.idincasare
+WHERE l.numelocalitate = 'Iași' AND t.numetara = 'România'
+GROUP BY p.numepersoana, p.prenumepersoana;
+
+
+--1.8 Care sunt clientii carora nu li s-a acordat pana in prezent niciun discount?
+SELECT p.idpersoana, p. numepersoana, p.prenumepersoana
+FROM persoane p
+INNER JOIN rezervari r ON p.idpersoana = r.idpersoanacontact
+WHERE r.discount = 0
+GROUP BY p.idpersoana ;
+
+SELECT COUNT (discount) AS nr_de_pers_care_n_au_primit_discount         -- un select doar de test
+FROM rezervari
+WHERE discount =0;
+
+
+--1.9 Afișați, pentru anul 2023 încasările pentru fiecare client, cu subtotal la nivel de localitate (a clienților) și un total general
+SELECT 
+    CASE 
+        WHEN p.numepersoana IS NOT NULL THEN p.numepersoana  ||  p.prenumepersoana
+        WHEN p.numepersoana IS NULL AND l.numelocalitate IS NOT NULL THEN 'Subtotal pentru ' || l.numelocalitate 
+        ELSE 'Total General'
+    END AS client_localitate,
+    SUM(ir.transa_rezervare) AS incasari_2023
+FROM persoane p
+JOIN rezervari r ON p.idpersoana = r.codclient
+JOIN incasari_rezervari ir ON r.idrezervare = ir.idrezervare
+JOIN incasari i ON ir.idincasare = i.idincasare
+JOIN localitati l ON p.idlocalitatepersoana = l.idlocalitate
+WHERE EXTRACT(YEAR FROM i.dataoraincasare) = 2023
+GROUP BY ROLLUP (l.numelocalitate, p.numepersoana, p.prenumepersoana);
+
+
+
+
+--1.10 Care dintre angajați sunt și clienți (soluția nu va folosi nici auto-joncțiuni, și nici INTERSECT)
+SELECT a.idangajat, p.numepersoana, p.prenumepersoana, a.functie, a.departament
+FROM angajati a
+JOIN persoane p ON a.idpersoana = p.idpersoana
+JOIN rezervari r ON p.idpersoana = r.codclient;
+
+
+--1.11 Afișați primele trei obiective din fiecare circuit turistic
+SELECT c.idcircuitturistic, c.nume_circuit_turistic, o.numeobiectiv, otc.obiectivnr
+FROM circuite_turistice c
+JOIN obiective_turistice_circuite otc ON c.idcircuitturistic = otc.idcircuitturistic
+JOIN obiective_turistice o ON otc.idobiectiv = o.idobiectiv
+WHERE otc.obiectivnr IN (1, 2, 3)
+ORDER BY c.idcircuitturistic, otc.obiectivnr;
+
+--1.12 Care sunt clienții cu încasări mai mari decât Clientul X?
+WITH total_x AS (
+    SELECT SUM(ir.transa_rezervare) AS total_incasari
+    FROM persoane p
+    JOIN rezervari r ON p.idpersoana = r.codclient
+    JOIN incasari_rezervari ir ON r.idrezervare = ir.idrezervare
+    WHERE p.numepersoana = 'Tudor' AND p.prenumepersoana = 'Cristina Ana Mihaela'
+)
+SELECT p.numepersoana, p.prenumepersoana, SUM(ir.transa_rezervare) AS incasari_totale
+FROM persoane p
+JOIN rezervari r ON p.idpersoana = r.codclient
+JOIN incasari_rezervari ir ON r.idrezervare = ir.idrezervare
+GROUP BY p.numepersoana, p.prenumepersoana
+HAVING SUM(ir.transa_rezervare) > (SELECT total_incasari FROM total_x);
+
+--1.13 Care sunt obiectivele turistice care au avut măcar vizitatorii obiectivului X?
+WITH vizitatori_x AS (
+    SELECT COUNT(rc.idrezervare) AS nr_vizitatori
+    FROM obiective_turistice ot
+    JOIN obiective_turistice_circuite otc ON ot.idobiectiv = otc.idobiectiv
+    JOIN rezervari_circuite rc ON otc.idcircuitturistic = rc.idcircuitturistic
+    WHERE ot.numeobiectiv = 'Castelul Bran'
+)
+SELECT ot.numeobiectiv, COUNT(rc.idrezervare) AS nr_vizitatori
+FROM obiective_turistice ot
+JOIN obiective_turistice_circuite otc ON ot.idobiectiv = otc.idobiectiv
+JOIN rezervari_circuite rc ON otc.idcircuitturistic = rc.idcircuitturistic
+GROUP BY ot.numeobiectiv
+HAVING COUNT(rc.idrezervare) >= (SELECT nr_vizitatori FROM vizitatori_x);
+
+--1.14 Calculați ponderea hotelului X în totalul încasărilor hotelurilor din Grecia în 2023.
+WITH incasari_hotel_x AS (
+    SELECT SUM(ir.transa_rezervare) AS incasari_x
+    FROM hoteluri h
+    JOIN camere_hotel ch ON h.idhotel = ch.idhotel
+    JOIN sejururi s ON ch.idcamera = s.idcamera
+    JOIN rezervari_sejururi rs ON s.idsejur = rs.idsejur
+    JOIN incasari_rezervari ir ON rs.idrezervare = ir.idrezervare
+    JOIN incasari i ON ir.idincasare = i.idincasare
+    JOIN localitati l ON h.idlocalitate = l.idlocalitate
+    JOIN tari t ON l.idtara = t.idtara
+    WHERE h.numehotel = 'Hotel Ocean'
+      AND t.numetara = 'Grecia'
+      AND EXTRACT(YEAR FROM i.dataoraincasare) = 2023
+),
+incasari_total_grecia AS (
+    SELECT SUM(ir.transa_rezervare) AS incasari_total
+    FROM hoteluri h
+    JOIN camere_hotel ch ON h.idhotel = ch.idhotel
+    JOIN sejururi s ON ch.idcamera = s.idcamera
+    JOIN rezervari_sejururi rs ON s.idsejur = rs.idsejur
+    JOIN incasari_rezervari ir ON rs.idrezervare = ir.idrezervare
+    JOIN incasari i ON ir.idincasare = i.idincasare
+    JOIN localitati l ON h.idlocalitate = l.idlocalitate
+    JOIN tari t ON l.idtara = t.idtara
+    WHERE t.numetara = 'Grecia'
+      AND EXTRACT(YEAR FROM i.dataoraincasare) = 2023
+)
+SELECT (incasari_x / incasari_total) * 100 AS pondere_procent
+FROM incasari_hotel_x, incasari_total_grecia;
+
+--1.15 Pe ce poziție se găsește Grecia în topul țărilor după numărul de obiective turistice?
+WITH clasament_tari AS (
+    SELECT t.numetara, COUNT(ot.idobiectiv) AS nr_obiective,
+           RANK() OVER (ORDER BY COUNT(ot.idobiectiv) DESC) AS pozitie
+    FROM tari t
+    JOIN localitati l ON t.idtara = l.idtara
+    JOIN obiective_turistice ot ON l.idlocalitate = ot.idlocalitate
+    GROUP BY t.numetara
+)
+SELECT numetara, nr_obiective, pozitie
+FROM clasament_tari
+WHERE numetara = 'Grecia';
